@@ -6,17 +6,20 @@
 //  Version : 1.0                                               //
 //  Description : Control Panel v2                              //
 //****************************************************************
+#include <Adafruit_NeoPixel.h>
 
-#define cablesLatchPin 8
-#define cablesDataPin 9
-#define cablesClockPin 7
+#define bar_graphs_Pin 6
+#define cablesLatchPin 4
+#define cablesDataPin 3
+#define cablesClockPin 2
 
-//Define variables to hold the data
-//for shift register.
-//starting with a non-zero numbers can help
-//troubleshoot
-int cableStates = 0;  // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
-int prevCableStates = 0;
+
+
+// Declare our NeoPixel strip object:
+Adafruit_NeoPixel barGraphs(95, bar_graphs_Pin, NEO_GRB + NEO_KHZ800);
+
+long cableStates = 0;  // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
+long prevCableStates = 0;
 int numCables[] = {0,0,0,0,0}; // Coal, Gas, Hydro, Solar, Wind
 byte statesIn = 72;
 
@@ -32,6 +35,8 @@ void setup() {
   pinMode(cablesClockPin, OUTPUT);
   pinMode(cablesDataPin, INPUT);
 
+  barGraphs.begin();
+  barGraphs.show(); // Initialize all pixels to 'off'
 }
 
 void loop() {
@@ -49,13 +54,21 @@ void loop() {
   //collect each shift register into a byte
   //the register attached to the chip comes in first
   statesIn = shiftIn(cablesDataPin, cablesClockPin);
-  statesIn = B00011000; // todo REMOVE AFTER TESTING
+//  statesIn = B00011000; // todo REMOVE AFTER TESTING
   cableStates = statesIn;
-  cableStates = cableStates << 8;
+//  statesIn = B10000001; // todo REMOVE AFTER TESTING
   statesIn = shiftIn(cablesDataPin, cablesClockPin);
-  statesIn = B10000001; // todo REMOVE AFTER TESTING
+  cableStates = cableStates << 8;
   cableStates = cableStates | statesIn;
-
+  
+  statesIn = shiftIn(cablesDataPin, cablesClockPin);
+  cableStates = cableStates << 8;
+  cableStates = cableStates | statesIn;
+  
+  statesIn = shiftIn(cablesDataPin, cablesClockPin);
+  cableStates = cableStates << 8;
+  cableStates = cableStates | statesIn;
+   
   if (prevCableStates != cableStates){    
     Serial.println(cableStates, BIN);
     numCables[0] = numCables[1] = numCables[2] = numCables[3] = numCables[4] = 0;
@@ -65,7 +78,7 @@ void loop() {
       //iterate through the bits in cableStates
       //for those that return true (ie that pin) add to the 
       //numCables array.
-      if (cableStates & (1 << n) ) { 
+      if (!(cableStates & (1 << n))) { 
         if (n < 4) {
           numCables[0]++;
         }else if ((n > 3) && (n<8)) {
@@ -80,26 +93,49 @@ void loop() {
       }
     }
 
+    barGraphs.clear();
     //white space
     Serial.println("-------------------");
-    Serial.print("Coal: ");
+    Serial.print("Coal: ");       
     Serial.println(numCables[0]);
+    int n = map(numCables[0],0,4,0,18);
+    for (int i=0; i<n; i++){
+      barGraphs.setPixelColor(i, 0, 0, 40);
+    } 
     Serial.print("Gas: ");
     Serial.println(numCables[1]);
+    n = map(numCables[1],0,4,0,18);
+    for (int i=0; i<n; i++){
+      barGraphs.setPixelColor(i+18, 0, 0, 40);
+    } 
     Serial.print("Hydro: ");
     Serial.println(numCables[2]);
+    n = map(numCables[2],0,4,0,18);
+    for (int i=0; i<n; i++){
+      barGraphs.setPixelColor(i+37, 0, 0, 40);
+    } 
     Serial.print("Solar: ");
     Serial.println(numCables[3]);
+    n = map(numCables[3],0,4,0,18);
+    for (int i=0; i<n; i++){
+      barGraphs.setPixelColor(i+56, 0, 0, 40);
+    } 
     Serial.print("Wind: ");
     Serial.println(numCables[4]);
 
+    n = map(numCables[4],0,4,0,18);
+    for (int i=0; i<n; i++){
+      barGraphs.setPixelColor(i+75, 0, 0, 40);
+    } 
+    barGraphs.show();
+    
     prevCableStates = cableStates;
   }
  
   
 
 //delay so all these print satements can keep up.
-delay(500);
+delay(100);
 
 }
 
