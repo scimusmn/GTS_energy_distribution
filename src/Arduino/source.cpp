@@ -7,7 +7,7 @@
 #include "source.h"
 #include "Adafruit_NeoPixel.h"
 
-Source::Source(Adafruit_NeoPixel* _led_strip, int _first_pixel)
+Source::Source(Adafruit_NeoPixel *_led_strip, int _first_pixel)
 {
   first_pixel = _first_pixel;
   this->led_strip = _led_strip;
@@ -16,30 +16,41 @@ Source::Source(Adafruit_NeoPixel* _led_strip, int _first_pixel)
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
-void Source::setNumCables(int numCables){
-    int P = map(numCables,0,4,0,18);
-    led_strip->clear();
-    for (int i=0; i<P; i++){
-        led_strip->setPixelColor(first_pixel + i, 0, 40, 0);
-    } 
-    
-    led_strip->show();
-    maxCapacity = numCables * 100;  
+void Source::setNumCables(int numCables)
+{
+  maxCapacity = numCables * 100;
+  lightGraph();
 }
 
-void Source::setPercentageActive(int percent){
-    powerOutput = (maxCapacity * percent)/100;
-
-    int P = map(percent,0,100,0,18);
-    led_strip->clear();
-    for (int i=0; i<P; i++){
-        led_strip->setPixelColor(first_pixel + i, 0, 0, 100);
-    }    
-    led_strip->show();
-
+void Source::setPercentageActive(int percent)
+{
+  powerOutput = (maxCapacity / 100) * percent;
+  lightGraph();
 }
 
+void Source::lightGraph()
+{
+  int C = map(maxCapacity, 0, 400, 0, 18);
+  int P = map(powerOutput, 0, 400, 0, 18);
+  for (int i = 0; i < 18; i++)
+  {
+    if (i < P)
+    {
+      led_strip->setPixelColor(first_pixel + i, led_strip->Color(0, 0, 40));
+    }
+    else if (i < C)
+    {
+      led_strip->setPixelColor(first_pixel + i, led_strip->Color(0, 5, 0));
+    }
+    else
+    {
+      led_strip->setPixelColor(first_pixel + i, led_strip->Color(0, 0, 0));
+    }
+  }
+  led_strip->show();
+}
 
-int Source::getPowerProduced(){
+int Source::getPowerProduced()
+{
   return powerOutput;
 }

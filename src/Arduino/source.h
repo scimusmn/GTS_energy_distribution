@@ -12,19 +12,20 @@
 // library interface description
 class Source
 {
-    // user-accessible "public" interface
-  public:
-    Source(Adafruit_NeoPixel*, int); //neopixel, first pixel
-    int getPowerProduced();
-    void setPercentageActive(int);
-    void setNumCables(int); 
+  // user-accessible "public" interface
+public:
+  Source(Adafruit_NeoPixel *, int); //neopixel, first pixel
+  int getPowerProduced();
+  void setPercentageActive(int);
+  void setNumCables(int);
 
-    // library-accessible "private" interface
-  private:
-    Adafruit_NeoPixel* led_strip;
-    int first_pixel;
-    int powerOutput;
-    long maxCapacity;
+  // library-accessible "private" interface
+private:
+  void lightGraph();
+  Adafruit_NeoPixel *led_strip;
+  int first_pixel;
+  int powerOutput;
+  int maxCapacity;
 };
 
 #endif

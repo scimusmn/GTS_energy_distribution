@@ -11,8 +11,8 @@
 // #include "arduino-base/Libraries/SerialController.hpp"
 
 #define bar_graphs_Pin 6
-#define production_Pin 6
-#define demand_Pin 6
+#define production_Pin 7
+#define demand_Pin 8
 #define cablesLatchPin 4
 #define cablesDataPin 3
 #define cablesClockPin 2
@@ -23,8 +23,8 @@
 
 // Declare NeoPixel strip object for bar graphs:
 Adafruit_NeoPixel barGraphs(95, bar_graphs_Pin, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel ProductionGraph(60, production_Pin, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel DemandGraph(60, demand_Pin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel ProductionGraph(70, production_Pin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel DemandGraph(70, demand_Pin, NEO_GRB + NEO_KHZ800);
 
 Source Coal(&barGraphs, 0);
 Source Gas(&barGraphs, 18);
@@ -32,20 +32,19 @@ Source Hydro(&barGraphs, 37);
 Source Solar(&barGraphs, 56);
 Source Wind(&barGraphs, 75);
 
-long cableStates = 0;  // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
+long cableStates = 0; // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
 long prevCableStates = 2;
 int simulationMinutes = 0;
-int demand_mw = 0; 
+int demand_mw = 0;
 
-unsigned long currentMillis, prevSendMillis =0;
+unsigned long currentMillis, prevSendMillis = 0;
 
-void setup() {
-  
+void setup()
+{
   // Ensure Serial Port is open and ready to communicate
   // serialController.setup(baudrate, &onParse);
 
   Serial.begin(115200);
-
 
   //define pin modes
   pinMode(cablesLatchPin, OUTPUT);
@@ -54,35 +53,41 @@ void setup() {
   pinMode(hydroAnalogPin, INPUT);
 
   barGraphs.begin();
-  barGraphs.show(); // Initialize all pixels to 'off'
-  
+  DemandGraph.begin();
+  ProductionGraph.begin();
+  barGraphs.clear();
+  DemandGraph.clear();
+  ProductionGraph.clear();
+
   Serial.println("Minutes, Coal, Gas, Hydro, Solar, Wind, Demand");
 }
 
-void loop() {
+void loop()
+{
   currentMillis = millis();
   // serialController.update();
 
   updateCableStates();
 
-  if ((currentMillis - prevSendMillis) > 250) {    
+  if ((currentMillis - prevSendMillis) > 250)
+  {
     updateHydro(); // read controls and update
 
     // generates fake solar/wind data
-    int cosValue = (35 - 65 * cos((simulationMinutes/60)/3.8)); 
-    cosValue = constrain(cosValue,0,100);
+    int cosValue = (35 - 65 * cos((simulationMinutes / 60) / 3.8));
+    cosValue = constrain(cosValue, 0, 100);
     Wind.setPercentageActive(cosValue);
     Solar.setPercentageActive(cosValue);
 
     // demand is just a sine wave
-    demand_mw = 800-300*cos((simulationMinutes/60)/3.8);
+    demand_mw = 800 - 300 * cos((simulationMinutes / 60) / 3.8);
 
     Coal.setPercentageActive(100); // todo read switches!
-    Gas.setPercentageActive(100); // todo read buttons
+    Gas.setPercentageActive(100);  // todo read buttons
 
     updateProductionGraph();
     updateDemandGraph(demand_mw);
-    
+
     Serial.print(simulationMinutes);
     Serial.print(", ");
     Serial.print(Coal.getPowerProduced());
@@ -100,40 +105,42 @@ void loop() {
     simulationMinutes = simulationMinutes + 15; // 15 minutes pass every 250 ms (1/4 second)
     prevSendMillis = currentMillis;
   }
-
 }
 
-void updateProductionGraph(){
+void updateProductionGraph()
+{
   int powerProduced = Coal.getPowerProduced() + Gas.getPowerProduced() + Hydro.getPowerProduced() + Solar.getPowerProduced() + Wind.getPowerProduced();
-  powerProduced = map(powerProduced,0,1000,0,60);
+  powerProduced = map(powerProduced, 0, 1000, 0, 70);
   ProductionGraph.clear();
-    for (int i=0; i<powerProduced; i++){
-      ProductionGraph.setPixelColor(i, 0, 0, 100);
-    }    
-    ProductionGraph.show();
+  for (int i = 0; i < powerProduced; i++)
+  {
+    ProductionGraph.setPixelColor(i, ProductionGraph.Color(0, 0, 20));
+  }
+  ProductionGraph.show();
 }
 
-void updateDemandGraph(int demand){
-  int powerDemanded = map(demand,0,1000,0,60);
+void updateDemandGraph(int demand)
+{
+  int powerDemanded = map(demand, 0, 1000, 0, 70);
   DemandGraph.clear();
-    for (int i=0; i<powerDemanded; i++){
-      DemandGraph.setPixelColor(i, 0, 100, 0);
-    }    
-    DemandGraph.show();
+  for (int i = 0; i < powerDemanded; i++)
+  {
+    DemandGraph.setPixelColor(i, DemandGraph.Color(20, 0, 0));
+  }
+  DemandGraph.show();
 }
 
-void updateCableStates() {
+void updateCableStates()
+{
   //Pulse the latch pin:
   //set it to 1 to collect parallel data
-  digitalWrite(cablesLatchPin,1);
+  digitalWrite(cablesLatchPin, 1);
   //set it to 1 to collect parallel data, wait
   delayMicroseconds(20);
-  //set it to 0 to transmit data serially  
-  digitalWrite(cablesLatchPin,0);
+  //set it to 0 to transmit data serially
+  digitalWrite(cablesLatchPin, 0);
 
- 
-
-  byte statesIn = 72;
+  byte statesIn;
   //while the shift register is in serial mode
   //collect each shift register into a byte
   //the register attached to the chip comes in first
@@ -142,52 +149,67 @@ void updateCableStates() {
   statesIn = shiftIn(cablesDataPin, cablesClockPin);
   cableStates = cableStates << 8;
   cableStates = cableStates | statesIn;
-  
-  statesIn = shiftIn(cablesDataPin, cablesClockPin);
-  cableStates = cableStates << 8;
-  cableStates = cableStates | statesIn;
-  
+
   statesIn = shiftIn(cablesDataPin, cablesClockPin);
   cableStates = cableStates << 8;
   cableStates = cableStates | statesIn;
 
-  cableStates = 0x0000;
-   
-  if (prevCableStates != cableStates){    
-    // Serial.println(cableStates, BIN);    
-    int numCables[] = {0,0,0,0,0}; // Coal, Gas, Hydro, Solar, Wind
+  statesIn = shiftIn(cablesDataPin, cablesClockPin);
+  cableStates = cableStates << 8;
+  cableStates = cableStates | statesIn;
 
-    for (int n=0; n<=15; n++)
+  if (prevCableStates != cableStates)
+  {
+    int numCables[] = {0, 0, 0, 0, 0}; // Coal, Gas, Hydro, Solar, Wind
+    long mask = 1;
+    for (int n = 0; n < 24; n++)
     {
       //iterate through the bits in cableStates
-      //for those that return true (ie that pin) add to the 
+      //for those that return true (ie that pin) add to the
       //numCables array.
-      if (!(cableStates & (1 << n))) { 
-        if (n < 4) {
-          numCables[0]++;
-        }else if ((n > 3) && (n<8)) {
+      if (!(cableStates & mask))
+      {
+
+        if (n < 4)
+        {
           numCables[1]++;
-        }else if ((n>7) && (n<10)){
-          numCables[2]++;
-        }else if ((n>9) && (n<13)){
+        }
+        else if (n < 8)
+        {
+          numCables[0]++;
+        }
+        else if (n < 12)
+        {
           numCables[3]++;
-        } else {
+        }
+        else if (n < 16)
+        {
+          numCables[2]++;
+        }
+        else if (n < 24)
+        {
           numCables[4]++;
         }
+        else
+        {
+          Serial.println("cable error");
+        }
       }
+      mask = mask << 1;
     }
-    Coal.setNumCables(numCables[0]);    
+
+    Coal.setNumCables(numCables[0]);
     Gas.setNumCables(numCables[1]);
     Hydro.setNumCables(numCables[2]);
     Solar.setNumCables(numCables[3]);
     Wind.setNumCables(numCables[4]);
-    
+
     prevCableStates = cableStates;
   }
 }
 
-
-byte shiftIn(int myDataPin, int myClockPin) {
+byte shiftIn(int myDataPin, int myClockPin)
+{
   int i;
   int temp = 0;
   int pinState;
@@ -196,17 +218,19 @@ byte shiftIn(int myDataPin, int myClockPin) {
   pinMode(myClockPin, OUTPUT);
   pinMode(myDataPin, INPUT);
 
-  for (i=7; i>=0; i--)
+  for (i = 7; i >= 0; i--)
   {
     digitalWrite(myClockPin, 0);
     delayMicroseconds(0.2);
     temp = digitalRead(myDataPin);
-    if (temp) {
+    if (temp)
+    {
       pinState = 1;
       //set the bit to 0 no matter what
       myDataIn = myDataIn | (1 << i);
     }
-    else {
+    else
+    {
       pinState = 0;
     }
     digitalWrite(myClockPin, 1);
@@ -214,11 +238,13 @@ byte shiftIn(int myDataPin, int myClockPin) {
   return myDataIn;
 }
 
-void updateHydro() {
+void updateHydro()
+{
   int hydroValue;
   hydroValue = analogRead(hydroAnalogPin);
-  hydroValue = random(1023); //todo Remove once connected to Pot
-  hydroValue = map(hydroValue,0,1023,0,100);
+  // hydroValue = random(1023); //todo Remove once connected to Pot
+  hydroValue = map(hydroValue, 35, 380, 0, 100);
+  hydroValue = constrain(hydroValue, 0, 100);
   Hydro.setPercentageActive(hydroValue);
 }
 
