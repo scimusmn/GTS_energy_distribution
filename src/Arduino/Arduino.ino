@@ -19,7 +19,7 @@
 #define hydroAnalogPin A1
 
 // SerialController serialController;
-// long baudrate = 9600;
+// long baudrate = 115200;
 
 // Declare NeoPixel strip object for bar graphs:
 Adafruit_NeoPixel barGraphs(95, bar_graphs_Pin, NEO_GRB + NEO_KHZ800);
@@ -34,7 +34,8 @@ Source Wind(&barGraphs, 75);
 
 long cableStates = 0;  // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
 long prevCableStates = 2;
-int simulationMinutes = 0;  
+int simulationMinutes = 0;
+int demand_mw = 0; 
 
 unsigned long currentMillis, prevSendMillis =0;
 
@@ -74,13 +75,13 @@ void loop() {
     Solar.setPercentageActive(cosValue);
 
     // demand is just a sine wave
-    int demand = 800-300*cos((simulationMinutes/60)/3.8);
+    demand_mw = 800-300*cos((simulationMinutes/60)/3.8);
 
     Coal.setPercentageActive(100); // todo read switches!
     Gas.setPercentageActive(100); // todo read buttons
 
     updateProductionGraph();
-    updateDemandGraph(demand);
+    updateDemandGraph(demand_mw);
     
     Serial.print(simulationMinutes);
     Serial.print(", ");
@@ -94,7 +95,7 @@ void loop() {
     Serial.print(", ");
     Serial.print(Wind.getPowerProduced());
     Serial.print(", ");
-    Serial.println(demand);
+    Serial.println(demand_mw);
 
     simulationMinutes = simulationMinutes + 15; // 15 minutes pass every 250 ms (1/4 second)
     prevSendMillis = currentMillis;
