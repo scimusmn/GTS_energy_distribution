@@ -36,6 +36,9 @@ long cableStates = 0; // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
 long prevCableStates = 2;
 int simulationMinutes = 0;
 int demand_mw = 0;
+int toggleStates[4] = {0, 0, 0, 0};
+int ledPins[4] = {11, 10, 12, 13};
+bool ledState[4];
 
 unsigned long currentMillis, prevSendMillis = 0;
 
@@ -51,6 +54,10 @@ void setup()
   pinMode(cablesClockPin, OUTPUT);
   pinMode(cablesDataPin, INPUT);
   pinMode(hydroAnalogPin, INPUT);
+  for (int i = 0; i < 4; i++)
+  {
+    pinMode(ledPins[i], OUTPUT);
+  }
 
   barGraphs.begin();
   DemandGraph.begin();
@@ -71,7 +78,24 @@ void loop()
 
   if ((currentMillis - prevSendMillis) > 250)
   {
+
     updateHydro(); // read controls and update
+    int numToggles = 0;
+    for (int i = 0; i < 4; i++)
+    {
+      if ((toggleStates[i] > 0) && (toggleStates[i] < 24))
+      {
+        toggleStates[i]++;
+        ledState[i] = !ledState[i];
+        digitalWrite(ledPins[i], ledState[i]);
+      }
+      if (toggleStates[i] > 23)
+      {
+        numToggles++;
+        digitalWrite(ledPins[i], HIGH);
+        ledState[i] = 1;
+      }
+    }
 
     // generates fake solar/wind data
     int cosValue = (35 - 65 * cos((simulationMinutes / 60) / 3.8));
@@ -80,10 +104,10 @@ void loop()
     Solar.setPercentageActive(cosValue);
 
     // demand is just a sine wave
-    demand_mw = 800 - 300 * cos((simulationMinutes / 60) / 3.8);
+    demand_mw = 700 - 250 * cos((simulationMinutes / 60) / 3.8);
 
-    Coal.setPercentageActive(100); // todo read switches!
-    Gas.setPercentageActive(100);  // todo read buttons
+    Coal.setPercentageActive(numToggles * 25); // todo read switches!
+    Gas.setPercentageActive(100);              // todo read buttons
 
     updateProductionGraph();
     updateDemandGraph(demand_mw);
@@ -186,13 +210,27 @@ void updateCableStates()
         {
           numCables[2]++;
         }
-        else if (n < 24)
+        else if (n < 20)
         {
           numCables[4]++;
         }
+      }
+      if ((n > 19) && (n < 24))
+      {
+        if (!(cableStates & mask))
+        {
+          if (toggleStates[n - 20] < 1)
+          {
+            toggleStates[n - 20] = 1;
+            ledState[n - 20] = 1;
+            digitalWrite(ledPins[n - 20], HIGH);
+          }
+        }
         else
         {
-          Serial.println("cable error");
+          toggleStates[n - 20] = 0;
+          ledState[n - 20] = 0;
+          digitalWrite(ledPins[n - 20], LOW);
         }
       }
       mask = mask << 1;
