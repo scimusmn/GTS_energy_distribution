@@ -9,6 +9,7 @@
 #include <Adafruit_NeoPixel.h>
 #include "coal-burner.h"
 #include "gas-burner.h"
+#include "hydro-generator.h"
 // #include "arduino-base/Libraries/SerialController.hpp"
 
 #define bar_graphs_Pin 6
@@ -27,6 +28,7 @@ Coal_Burner coalBurner2(&barGraphs, 18, 0x20, 0x200000);
 Coal_Burner coalBurner3(&barGraphs, 37, 0x40, 0x400000);
 Coal_Burner coalBurner4(&barGraphs, 56, 0x80, 0x800000);
 Gas_Burner gasBurner1(&barGraphs, 75, 0x80, 0x400000, 0x800000);
+Hydro_Generator hydro1(&barGraphs, 84, 0x80, A1);
 
 long inputStates = 0; // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
 long prevInputStates = 2;
@@ -62,6 +64,7 @@ void loop()
   if ((currentMillis - gas_btn_last_check) > gasBtnDebounce) // code runs every gasBtnDebounce millis.
   {
     gasBurner1.update(inputStates);
+    hydro1.update(inputStates);
     // TODO add more gasburners
 
     gas_btn_last_check = currentMillis;
