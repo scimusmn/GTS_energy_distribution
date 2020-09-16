@@ -1,20 +1,21 @@
 /*
-  hydro-generator.h - Control panel library for Energy Distribution - Gateway to Science
+  Renewable.h - Control panel library for Energy Distribution - Gateway to Science
   Joe Meyer created 9/16/2020 at the science museum of mn
 */
 #include "Arduino.h"
 #include "Adafruit_NeoPixel.h"
 
 // ensure this library description is only included once
-#ifndef Hydro_Generator_h
-#define Hydro_Generator_h
+#ifndef Renewable_h
+#define Renewable_h
 
 // library interface description
-class Hydro_Generator
+class Renewable
 {
   // user-accessible "public" interface
 public:
-  Hydro_Generator(Adafruit_NeoPixel *, int, long, int); //neopixel, first pixel, analog pin
+  Renewable(Adafruit_NeoPixel *, int, long, int); //neopixel, first pixel, analog pin
+  void setPercentage(int);
   int getPowerProduced();
   void update(long);
 

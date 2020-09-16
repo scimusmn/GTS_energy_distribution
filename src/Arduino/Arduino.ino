@@ -9,7 +9,7 @@
 #include <Adafruit_NeoPixel.h>
 #include "coal-burner.h"
 #include "gas-burner.h"
-#include "hydro-generator.h"
+#include "renewable.h"
 // #include "arduino-base/Libraries/SerialController.hpp"
 
 #define bar_graphs_Pin 6
@@ -28,13 +28,15 @@ Coal_Burner coalBurner2(&barGraphs, 18, 0x20, 0x200000);
 Coal_Burner coalBurner3(&barGraphs, 37, 0x40, 0x400000);
 Coal_Burner coalBurner4(&barGraphs, 56, 0x80, 0x800000);
 Gas_Burner gasBurner1(&barGraphs, 75, 0x80, 0x400000, 0x800000);
-Hydro_Generator hydro1(&barGraphs, 84, 0x80, A1);
+Renewable hydro1(&barGraphs, 84, 0x80, A1);
+Renewable wind1(&barGraphs, 46, 0x80, 0); // 0 for the analog pin indicates it's wind or solar.
 
 long inputStates = 0; // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
 long prevInputStates = 2;
 int simulationMinutes = 0;
 int millisPer15Minutes = 250;
 int gasBtnDebounce = 100; // debounce interval for gas burner buttons.
+int windLevel = 50;       // TODO get from react App.
 
 unsigned long currentMillis, sim15PrevMillis = 0, gas_btn_last_check;
 
@@ -70,7 +72,7 @@ void loop()
 
   if ((currentMillis - sim15PrevMillis) > millisPer15Minutes) // code runs every "15 minutes" simulation time.
   {
-
+    wind1.setPercentage(windLevel);
     coalBurner1.update(inputStates); // coal take 6 hours to warm up.
     coalBurner2.update(inputStates);
     coalBurner3.update(inputStates);

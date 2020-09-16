@@ -4,21 +4,22 @@
 */
 
 #include "Arduino.h"
-#include "hydro-generator.h"
+#include "renewable.h"
 #include "Adafruit_NeoPixel.h"
 
-Hydro_Generator::Hydro_Generator(Adafruit_NeoPixel *_led_strip, int _first_pixel, long _cable_bit_mask, int _analog_pin)
+Renewable::Renewable(Adafruit_NeoPixel *_led_strip, int _first_pixel, long _cable_bit_mask, int _analog_pin)
 {
   first_pixel = _first_pixel;
   this->led_strip = _led_strip;
   analog_pin = _analog_pin;
-  pinMode(analog_pin, INPUT);
+  if (analog_pin > 0)
+    pinMode(analog_pin, INPUT);
   cable_bit_mask = _cable_bit_mask;
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
 
-void Hydro_Generator::update(long _inputStates)
+void Renewable::update(long _inputStates)
 {
   if (!(_inputStates & cable_bit_mask)) // check if cable is connected.
   {
@@ -33,7 +34,7 @@ void Hydro_Generator::update(long _inputStates)
     updatePixels();
   }
 
-  if (is_connected)
+  if (is_connected && (analog_pin > 0))
   {
     int reading = analogRead(analog_pin);
     outputPercent = map(reading, 40, 380, 0, 100);
@@ -42,13 +43,20 @@ void Hydro_Generator::update(long _inputStates)
   }
 }
 
-int Hydro_Generator::getPowerProduced()
+int Renewable::getPowerProduced()
 {
   return outputPercent;
 }
 
+void Renewable::setPercentage(int percent)
+{
+  percent = constrain(percent, 0, 100);
+  outputPercent = percent;
+  updatePixels();
+}
+
 // Private Methods //////////////////////////////////////////////////////////////
-void Hydro_Generator::updatePixels()
+void Renewable::updatePixels()
 {
   int level = map(outputPercent, 0, 100, 0, 8);
   for (int i = 0; i < 8; i++)
