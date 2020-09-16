@@ -29,8 +29,8 @@ Coal_Burner coalBurner3(&barGraphs, 37, 0x40, 0x400000);
 Coal_Burner coalBurner4(&barGraphs, 56, 0x80, 0x800000);
 Gas_Burner gasBurner1(&barGraphs, 27, 0x8, 0x400000, 0x800000);
 Renewable hydro1(&barGraphs, 46, 0x1000, A1, 0x000020); // provide an analog pin for hydro.
-Renewable solar1(&barGraphs, 65, 0x80, 0, 0x101000);    // 0 for the analog pin indicates it's wind or solar.
-Renewable wind1(&barGraphs, 84, 0x80, 0, 0x070707);     // 0 for the analog pin indicates it's wind or solar.
+Renewable solar1(&barGraphs, 65, 0x800, 0, 0x101000);   // 0 for the analog pin indicates it's wind or solar.
+Renewable wind1(&barGraphs, 84, 0x80000, 0, 0x070707);  // 0 for the analog pin indicates it's wind or solar.
 
 long inputStates = 0; // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
 long prevInputStates = 2;
