@@ -7,37 +7,31 @@
 //  Description : Control Panel v2                              //
 //****************************************************************
 #include <Adafruit_NeoPixel.h>
-#include "source.h"
+#include "coal-burner.h"
 // #include "arduino-base/Libraries/SerialController.hpp"
 
 #define bar_graphs_Pin 6
-#define production_Pin 7
-#define demand_Pin 8
-#define cablesLatchPin 4
-#define cablesDataPin 3
-#define cablesClockPin 2
-#define hydroAnalogPin A1
+#define inputsLatchPin 4
+#define inputsDataPin 3
+#define inputsClockPin 2
 
 // SerialController serialController;
 // long baudrate = 115200;
 
 // Declare NeoPixel strip object for bar graphs:
 Adafruit_NeoPixel barGraphs(95, bar_graphs_Pin, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel ProductionGraph(70, production_Pin, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel DemandGraph(70, demand_Pin, NEO_GRB + NEO_KHZ800);
 
-Source Coal(&barGraphs, 0);
-Source Gas(&barGraphs, 18);
-Source Hydro(&barGraphs, 37);
-Source Solar(&barGraphs, 56);
-Source Wind(&barGraphs, 75);
+Coal_Burner coalBurner1(&barGraphs, 0, 0x10, 0x100000); //neopixel, first pixel, cable bit mask, switch bit mask
+Coal_Burner coalBurner2(&barGraphs, 18, 0x20, 0x200000);
+Coal_Burner coalBurner3(&barGraphs, 37, 0x40, 0x400000);
+Coal_Burner coalBurner4(&barGraphs, 56, 0x80, 0x800000);
 
-long cableStates = 0; // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
-long prevCableStates = 2;
+long inputStates = 0; // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
+long prevInputStates = 2;
 int simulationMinutes = 0;
-int demand_mw = 0;
+int millisPer15Minutes = 250;
 
-unsigned long currentMillis, prevSendMillis = 0;
+unsigned long currentMillis, sim15PrevMillis = 0;
 
 void setup()
 {
@@ -47,19 +41,12 @@ void setup()
   Serial.begin(115200);
 
   //define pin modes
-  pinMode(cablesLatchPin, OUTPUT);
-  pinMode(cablesClockPin, OUTPUT);
-  pinMode(cablesDataPin, INPUT);
-  pinMode(hydroAnalogPin, INPUT);
+  pinMode(inputsLatchPin, OUTPUT);
+  pinMode(inputsClockPin, OUTPUT);
+  pinMode(inputsDataPin, INPUT);
 
   barGraphs.begin();
-  DemandGraph.begin();
-  ProductionGraph.begin();
   barGraphs.clear();
-  DemandGraph.clear();
-  ProductionGraph.clear();
-
-  Serial.println("Minutes, Coal, Gas, Hydro, Solar, Wind, Demand");
 }
 
 void loop()
@@ -67,144 +54,59 @@ void loop()
   currentMillis = millis();
   // serialController.update();
 
-  updateCableStates();
+  updateInputStates();
 
-  if ((currentMillis - prevSendMillis) > 250)
+  if ((currentMillis - sim15PrevMillis) > millisPer15Minutes) // code runs every "15 minutes" simulation time.
   {
-    updateHydro(); // read controls and update
 
-    // generates fake solar/wind data
-    int cosValue = (35 - 65 * cos((simulationMinutes / 60) / 3.8));
-    cosValue = constrain(cosValue, 0, 100);
-    Wind.setPercentageActive(cosValue);
-    Solar.setPercentageActive(cosValue);
-
-    // demand is just a sine wave
-    demand_mw = 800 - 300 * cos((simulationMinutes / 60) / 3.8);
-
-    Coal.setPercentageActive(100); // todo read switches!
-    Gas.setPercentageActive(100);  // todo read buttons
-
-    updateProductionGraph();
-    updateDemandGraph(demand_mw);
-
-    Serial.print(simulationMinutes);
-    Serial.print(", ");
-    Serial.print(Coal.getPowerProduced());
-    Serial.print(", ");
-    Serial.print(Gas.getPowerProduced());
-    Serial.print(", ");
-    Serial.print(Hydro.getPowerProduced());
-    Serial.print(", ");
-    Serial.print(Solar.getPowerProduced());
-    Serial.print(", ");
-    Serial.print(Wind.getPowerProduced());
-    Serial.print(", ");
-    Serial.println(demand_mw);
+    coalBurner1.update();
+    coalBurner2.update();
+    coalBurner3.update();
+    coalBurner4.update();
 
     simulationMinutes = simulationMinutes + 15; // 15 minutes pass every 250 ms (1/4 second)
-    prevSendMillis = currentMillis;
+    sim15PrevMillis = currentMillis;
+    barGraphs.show();
   }
 }
 
-void updateProductionGraph()
-{
-  int powerProduced = Coal.getPowerProduced() + Gas.getPowerProduced() + Hydro.getPowerProduced() + Solar.getPowerProduced() + Wind.getPowerProduced();
-  powerProduced = map(powerProduced, 0, 1000, 0, 70);
-  ProductionGraph.clear();
-  for (int i = 0; i < powerProduced; i++)
-  {
-    ProductionGraph.setPixelColor(i, ProductionGraph.Color(0, 0, 20));
-  }
-  ProductionGraph.show();
-}
-
-void updateDemandGraph(int demand)
-{
-  int powerDemanded = map(demand, 0, 1000, 0, 70);
-  DemandGraph.clear();
-  for (int i = 0; i < powerDemanded; i++)
-  {
-    DemandGraph.setPixelColor(i, DemandGraph.Color(20, 0, 0));
-  }
-  DemandGraph.show();
-}
-
-void updateCableStates()
+void updateInputStates()
 {
   //Pulse the latch pin:
   //set it to 1 to collect parallel data
-  digitalWrite(cablesLatchPin, 1);
+  digitalWrite(inputsLatchPin, 1);
   //set it to 1 to collect parallel data, wait
   delayMicroseconds(20);
   //set it to 0 to transmit data serially
-  digitalWrite(cablesLatchPin, 0);
+  digitalWrite(inputsLatchPin, 0);
 
   byte statesIn;
   //while the shift register is in serial mode
   //collect each shift register into a byte
   //the register attached to the chip comes in first
-  statesIn = shiftIn(cablesDataPin, cablesClockPin);
-  cableStates = statesIn;
-  statesIn = shiftIn(cablesDataPin, cablesClockPin);
-  cableStates = cableStates << 8;
-  cableStates = cableStates | statesIn;
+  statesIn = shiftIn(inputsDataPin, inputsClockPin);
+  inputStates = statesIn;
+  statesIn = shiftIn(inputsDataPin, inputsClockPin);
+  inputStates = inputStates << 8;
+  inputStates = inputStates | statesIn;
 
-  statesIn = shiftIn(cablesDataPin, cablesClockPin);
-  cableStates = cableStates << 8;
-  cableStates = cableStates | statesIn;
+  statesIn = shiftIn(inputsDataPin, inputsClockPin);
+  inputStates = inputStates << 8;
+  inputStates = inputStates | statesIn;
 
-  statesIn = shiftIn(cablesDataPin, cablesClockPin);
-  cableStates = cableStates << 8;
-  cableStates = cableStates | statesIn;
+  statesIn = shiftIn(inputsDataPin, inputsClockPin);
+  inputStates = inputStates << 8;
+  inputStates = inputStates | statesIn;
 
-  if (prevCableStates != cableStates)
+  if (prevInputStates != inputStates)
   {
-    int numCables[] = {0, 0, 0, 0, 0}; // Coal, Gas, Hydro, Solar, Wind
-    long mask = 1;
-    for (int n = 0; n < 24; n++)
-    {
-      //iterate through the bits in cableStates
-      //for those that return true (ie that pin) add to the
-      //numCables array.
-      if (!(cableStates & mask))
-      {
+    // run update of all power sources update function passing in inputStates.
+    coalBurner1.updateInputs(inputStates);
+    coalBurner2.updateInputs(inputStates);
+    coalBurner3.updateInputs(inputStates);
+    coalBurner4.updateInputs(inputStates);
 
-        if (n < 4)
-        {
-          numCables[1]++;
-        }
-        else if (n < 8)
-        {
-          numCables[0]++;
-        }
-        else if (n < 12)
-        {
-          numCables[3]++;
-        }
-        else if (n < 16)
-        {
-          numCables[2]++;
-        }
-        else if (n < 24)
-        {
-          numCables[4]++;
-        }
-        else
-        {
-          Serial.println("cable error");
-        }
-      }
-      mask = mask << 1;
-    }
-
-    Coal.setNumCables(numCables[0]);
-    Gas.setNumCables(numCables[1]);
-    Hydro.setNumCables(numCables[2]);
-    Solar.setNumCables(numCables[3]);
-    Wind.setNumCables(numCables[4]);
-
-    prevCableStates = cableStates;
+    prevInputStates = inputStates;
   }
 }
 
@@ -236,16 +138,6 @@ byte shiftIn(int myDataPin, int myClockPin)
     digitalWrite(myClockPin, 1);
   }
   return myDataIn;
-}
-
-void updateHydro()
-{
-  int hydroValue;
-  hydroValue = analogRead(hydroAnalogPin);
-  // hydroValue = random(1023); //todo Remove once connected to Pot
-  hydroValue = map(hydroValue, 35, 380, 0, 100);
-  hydroValue = constrain(hydroValue, 0, 100);
-  Hydro.setPercentageActive(hydroValue);
 }
 
 // this function will run when serialController reads new data  TODO reconfig for Stele serial
