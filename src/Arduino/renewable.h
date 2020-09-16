@@ -21,13 +21,14 @@ public:
 
   // library-accessible "private" interface
 private:
+  bool is_connected;
+  int percent_available;
   void updatePixels();
   Adafruit_NeoPixel *led_strip;
   int first_pixel;
   long cable_bit_mask;
   int analog_pin;
   int outputPercent;
-  bool is_connected;
   uint32_t light_color = 0x002000;
 };
 

@@ -26,21 +26,23 @@ void Renewable::update(long _inputStates)
   if (!(_inputStates & cable_bit_mask)) // check if cable is connected.
   {
     //cable is plugged in.
-    is_connected = true;
+    if (analog_pin > 0)
+    {
+      int reading = analogRead(analog_pin);
+      outputPercent = map(reading, 40, 380, 0, 100);
+    }
+    else
+    {
+      outputPercent = percent_available;
+    }
+
+    outputPercent = constrain(outputPercent, 0, 100);
+    updatePixels();
   }
   else
   {
     //cable is unplugged.
-    is_connected = false;
     outputPercent = 0;
-    updatePixels();
-  }
-
-  if (is_connected && (analog_pin > 0))
-  {
-    int reading = analogRead(analog_pin);
-    outputPercent = map(reading, 40, 380, 0, 100);
-    outputPercent = constrain(outputPercent, 0, 100);
     updatePixels();
   }
 }
@@ -53,8 +55,7 @@ int Renewable::getPowerProduced()
 void Renewable::setPercentage(int percent)
 {
   percent = constrain(percent, 0, 100);
-  outputPercent = percent;
-  updatePixels();
+  percent_available = percent;
 }
 
 // Private Methods //////////////////////////////////////////////////////////////

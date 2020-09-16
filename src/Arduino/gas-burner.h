@@ -27,7 +27,6 @@ private:
   long cable_bit_mask;
   int first_pixel;
   int outputPercent;
-  bool is_connected;
   uint32_t light_color = 0x002000;
 };
 

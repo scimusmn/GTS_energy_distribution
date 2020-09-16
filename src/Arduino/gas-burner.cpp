@@ -23,38 +23,24 @@ void Gas_Burner::update(long _inputStates)
   if (!(_inputStates & cable_bit_mask)) // check if cable is connected.
   {
     //cable is plugged in.
-    is_connected = true;
-  }
-  else
-  {
-    //cable is unplugged.
-    is_connected = false;
-    outputPercent = 0;
-    updatePixels();
-  }
-
-  if (is_connected)
-  {                                     //TODO rewrite better?
-    if (_inputStates & up_btn_bit_mask) // if it's connected, check the btn.
-    {
-      //switch is off
-    }
-    else //switch is on
+    if (!(_inputStates & up_btn_bit_mask)) // if it's connected, check the up btn.
     {
       outputPercent = outputPercent + 10;
       outputPercent = constrain(outputPercent, 0, 100);
     }
 
-    if (_inputStates & down_btn_bit_mask) // if it's connected, check the btn.
+    if (!(_inputStates & down_btn_bit_mask)) // if it's connected, check the down btn.
     {
-      //switch is off
-    }
-    else //switch is on
-    {
+
       outputPercent = outputPercent - 10;
       outputPercent = constrain(outputPercent, 0, 100);
     }
-
+    updatePixels();
+  }
+  else
+  {
+    //cable is unplugged.
+    outputPercent = 0;
     updatePixels();
   }
 }
