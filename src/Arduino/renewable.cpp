@@ -7,7 +7,7 @@
 #include "renewable.h"
 #include "Adafruit_NeoPixel.h"
 
-Renewable::Renewable(Adafruit_NeoPixel *_led_strip, int _first_pixel, long _cable_bit_mask, int _analog_pin)
+Renewable::Renewable(Adafruit_NeoPixel *_led_strip, int _first_pixel, long _cable_bit_mask, int _analog_pin, uint32_t _color)
 {
   first_pixel = _first_pixel;
   this->led_strip = _led_strip;
@@ -15,6 +15,8 @@ Renewable::Renewable(Adafruit_NeoPixel *_led_strip, int _first_pixel, long _cabl
   if (analog_pin > 0)
     pinMode(analog_pin, INPUT);
   cable_bit_mask = _cable_bit_mask;
+  outputPercent = 0;
+  light_color = _color;
 }
 
 // Public Methods //////////////////////////////////////////////////////////////

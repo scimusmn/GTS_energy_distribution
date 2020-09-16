@@ -25,9 +25,8 @@ private:
   long switch_bit_mask;
   long cable_bit_mask;
   int first_pixel;
-  bool switch_state;
+  bool is_on;
   int outputPercent;
-  bool is_connected;
   uint32_t warming_color = 0x150300; //RRGGBB
   uint32_t production_color = 0x002000;
   uint32_t light_color;

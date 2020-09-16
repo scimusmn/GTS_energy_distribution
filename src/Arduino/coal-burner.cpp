@@ -19,47 +19,35 @@ Coal_Burner::Coal_Burner(Adafruit_NeoPixel *_led_strip, int _first_pixel, long _
 
 void Coal_Burner::update(long _inputStates)
 {
-  if (!(_inputStates & cable_bit_mask)) // check if cable is connected.
+
+  if ((!(_inputStates & cable_bit_mask)) && !(_inputStates & switch_bit_mask)) // check if cable is connected and switch is on.
   {
-    //cable is plugged in.
-    is_connected = true;
+    if (is_on == 0)
+    {
+      outputPercent = 28;
+      is_on = 1;
+    }
   }
   else
   {
-    //cable is unplugged.
-    is_connected = false;
     outputPercent = 0;
+    is_on = 0;
     updatePixels();
   }
 
-  if (is_connected)
+  if (is_on && (outputPercent != 100))
   {
-    if (_inputStates & switch_bit_mask) // if it's connected, check the switch.
+    outputPercent = outputPercent + 3; // each update gets +4%, meaning it'll take twenty five intervals (6 hours simulation time) to get to 100%.
+    outputPercent = constrain(outputPercent, 0, 100);
+    if (outputPercent == 100)
     {
-      //switch is off
-      switch_state = 0;
-      outputPercent = 0;
-      updatePixels();
+      light_color = production_color;
     }
-    else //switch is on
+    else
     {
-      switch_state = 1;
+      light_color = warming_color;
     }
-
-    if (switch_state && (outputPercent != 100))
-    {
-      outputPercent = outputPercent + 4; // each update gets +4%, meaning it'll take twenty five intervals (6 hours simulation time) to get to 100%.
-      outputPercent = constrain(outputPercent, 0, 100);
-      if (outputPercent == 100)
-      {
-        light_color = production_color;
-      }
-      else
-      {
-        light_color = warming_color;
-      }
-      updatePixels();
-    }
+    updatePixels();
   }
 }
 

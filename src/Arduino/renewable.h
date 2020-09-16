@@ -14,7 +14,7 @@ class Renewable
 {
   // user-accessible "public" interface
 public:
-  Renewable(Adafruit_NeoPixel *, int, long, int); //neopixel, first pixel, analog pin
+  Renewable(Adafruit_NeoPixel *, int, long, int, uint32_t); //neopixel, first pixel, analog pin
   void setPercentage(int);
   int getPowerProduced();
   void update(long);
