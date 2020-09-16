@@ -62,16 +62,18 @@ void loop()
   if ((currentMillis - gas_btn_last_check) > gasBtnDebounce) // code runs every gasBtnDebounce millis.
   {
     gasBurner1.update(inputStates);
+    // TODO add more gasburners
+
     gas_btn_last_check = currentMillis;
   }
 
   if ((currentMillis - sim15PrevMillis) > millisPer15Minutes) // code runs every "15 minutes" simulation time.
   {
 
-    coalBurner1.update();
-    coalBurner2.update();
-    coalBurner3.update();
-    coalBurner4.update();
+    coalBurner1.update(inputStates); // coal take 6 hours to warm up.
+    coalBurner2.update(inputStates);
+    coalBurner3.update(inputStates);
+    coalBurner4.update(inputStates);
 
     simulationMinutes = simulationMinutes + 15; // 15 minutes pass every 250 ms (1/4 second)
     sim15PrevMillis = currentMillis;
@@ -109,11 +111,6 @@ void updateInputStates()
 
   if (prevInputStates != inputStates)
   {
-    // run update of all power sources update function passing in inputStates.
-    coalBurner1.updateInputs(inputStates);
-    coalBurner2.updateInputs(inputStates);
-    coalBurner3.updateInputs(inputStates);
-    coalBurner4.updateInputs(inputStates);
     prevInputStates = inputStates;
   }
 }

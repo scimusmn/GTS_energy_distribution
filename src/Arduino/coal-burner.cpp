@@ -16,7 +16,8 @@ Coal_Burner::Coal_Burner(Adafruit_NeoPixel *_led_strip, int _first_pixel, long _
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
-void Coal_Burner::updateInputs(long _inputStates)
+
+void Coal_Burner::update(long _inputStates)
 {
   if (!(_inputStates & cable_bit_mask)) // check if cable is connected.
   {
@@ -44,16 +45,10 @@ void Coal_Burner::updateInputs(long _inputStates)
     {
       switch_state = 1;
     }
-  }
-}
 
-void Coal_Burner::update()
-{
-  if (is_connected)
-  {
     if (switch_state && (outputPercent != 100))
     {
-      outputPercent = outputPercent + 4;
+      outputPercent = outputPercent + 4; // each update gets +4%, meaning it'll take twenty five intervals (6 hours simulation time) to get to 100%.
       outputPercent = constrain(outputPercent, 0, 100);
       if (outputPercent == 100)
       {

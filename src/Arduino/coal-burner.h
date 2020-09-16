@@ -16,8 +16,7 @@ class Coal_Burner
 public:
   Coal_Burner(Adafruit_NeoPixel *, int, long, long); //neopixel, first pixel, cable bit mask, switch bit mask
   int getPowerProduced();
-  void updateInputs(long);
-  void update(void);
+  void update(long);
 
   // library-accessible "private" interface
 private:
