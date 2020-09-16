@@ -36,7 +36,6 @@ void Hydro_Generator::update(long _inputStates)
   if (is_connected)
   {
     int reading = analogRead(analog_pin);
-    Serial.println(reading);
     outputPercent = map(reading, 40, 380, 0, 100);
     outputPercent = constrain(outputPercent, 0, 100);
     updatePixels();

@@ -24,7 +24,6 @@ void Gas_Burner::update(long _inputStates)
   {
     //cable is plugged in.
     is_connected = true;
-    Serial.println("cable plugged");
   }
   else
   {
@@ -32,19 +31,16 @@ void Gas_Burner::update(long _inputStates)
     is_connected = false;
     outputPercent = 0;
     updatePixels();
-    Serial.println("cable UNplugged");
   }
 
   if (is_connected)
-  {
+  {                                     //TODO rewrite better?
     if (_inputStates & up_btn_bit_mask) // if it's connected, check the btn.
     {
       //switch is off
-      Serial.println("up btn OFF");
     }
     else //switch is on
     {
-      Serial.println("up btn on");
       outputPercent = outputPercent + 10;
       outputPercent = constrain(outputPercent, 0, 100);
     }
@@ -52,11 +48,9 @@ void Gas_Burner::update(long _inputStates)
     if (_inputStates & down_btn_bit_mask) // if it's connected, check the btn.
     {
       //switch is off
-      Serial.println("down btn OFF");
     }
     else //switch is on
     {
-      Serial.println("down btn on");
       outputPercent = outputPercent - 10;
       outputPercent = constrain(outputPercent, 0, 100);
     }

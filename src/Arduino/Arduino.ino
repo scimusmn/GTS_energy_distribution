@@ -59,15 +59,13 @@ void loop()
   currentMillis = millis();
   // serialController.update();
 
-  updateInputStates();
-
   if ((currentMillis - gas_btn_last_check) > gasBtnDebounce) // code runs every gasBtnDebounce millis.
   {
+    updateInputStates();
     gasBurner1.update(inputStates);
     hydro1.update(inputStates);
-    // TODO add more gasburners
-
     gas_btn_last_check = currentMillis;
+    barGraphs.show();
   }
 
   if ((currentMillis - sim15PrevMillis) > millisPer15Minutes) // code runs every "15 minutes" simulation time.
@@ -78,9 +76,16 @@ void loop()
     coalBurner3.update(inputStates);
     coalBurner4.update(inputStates);
 
-    simulationMinutes = simulationMinutes + 15; // 15 minutes pass every 250 ms (1/4 second)
+    simulationMinutes = simulationMinutes + 15; // 15 minutes pass every millisPer15Minutes (1/4 second)
     sim15PrevMillis = currentMillis;
-    barGraphs.show();
+
+    Serial.print(coalBurner1.getPowerProduced());
+    Serial.print(", ");
+    Serial.print(coalBurner2.getPowerProduced());
+    Serial.print(", ");
+    Serial.print(gasBurner1.getPowerProduced());
+    Serial.print(", ");
+    Serial.println(hydro1.getPowerProduced());
   }
 }
 
