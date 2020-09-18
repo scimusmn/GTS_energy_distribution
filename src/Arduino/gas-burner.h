@@ -14,13 +14,14 @@ class Gas_Burner
 {
   // user-accessible "public" interface
 public:
-  Gas_Burner(Adafruit_NeoPixel *, int, long, long, long); //neopixel, first pixel, cable bit mask, up button bit mask, down button bit mask
+  Gas_Burner(Adafruit_NeoPixel *, int, int, int, int); //neopixel, first pixel, cable bit num shift, up button bit num shift, down button bit num shift
   int getPowerProduced();
   void update(long);
 
   // library-accessible "private" interface
 private:
   void updatePixels();
+  long numToMask(int);
   Adafruit_NeoPixel *led_strip;
   long up_btn_bit_mask;
   long down_btn_bit_mask;

@@ -7,13 +7,13 @@
 #include "gas-burner.h"
 #include "Adafruit_NeoPixel.h"
 
-Gas_Burner::Gas_Burner(Adafruit_NeoPixel *_led_strip, int _first_pixel, long _cable_bit_mask, long _up_btn_bit_mask, long _down_btn_bit_mask)
+Gas_Burner::Gas_Burner(Adafruit_NeoPixel *_led_strip, int _first_pixel, int _cable_bit_num, int _up_btn_bit_num, int _down_btn_bit_num)
 {
   first_pixel = _first_pixel;
   this->led_strip = _led_strip;
-  up_btn_bit_mask = _up_btn_bit_mask;
-  down_btn_bit_mask = _down_btn_bit_mask;
-  cable_bit_mask = _cable_bit_mask;
+  up_btn_bit_mask = numToMask(_up_btn_bit_num);
+  down_btn_bit_mask = numToMask(_down_btn_bit_num);
+  cable_bit_mask = numToMask(_cable_bit_num);
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
@@ -63,4 +63,14 @@ void Gas_Burner::updatePixels()
     else
       led_strip->setPixelColor(first_pixel + i, 0x0); // turn off pixel
   }
+}
+
+long Gas_Burner::numToMask(int num)
+{
+  long mask = 1;
+  for (int i = 0; i < num; i++)
+  {
+    mask = mask << 1;
+  }
+  return mask;
 }

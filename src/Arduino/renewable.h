@@ -14,7 +14,7 @@ class Renewable
 {
   // user-accessible "public" interface
 public:
-  Renewable(Adafruit_NeoPixel *, int, long, int, uint32_t); //neopixel, first pixel, analog pin
+  Renewable(Adafruit_NeoPixel *, int, int, int, uint32_t); //neopixel, first pixel, cable shift num, analog pin, color
   void setPercentage(int);
   int getPowerProduced();
   void update(long);
@@ -24,6 +24,7 @@ private:
   bool is_connected;
   int percent_available;
   void updatePixels();
+  long numToMask(int);
   Adafruit_NeoPixel *led_strip;
   int first_pixel;
   long cable_bit_mask;

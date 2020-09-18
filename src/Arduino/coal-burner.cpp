@@ -7,12 +7,12 @@
 #include "coal-burner.h"
 #include "Adafruit_NeoPixel.h"
 
-Coal_Burner::Coal_Burner(Adafruit_NeoPixel *_led_strip, int _first_pixel, long _cable_bit_mask, long _switch_bit_mask)
+Coal_Burner::Coal_Burner(Adafruit_NeoPixel *_led_strip, int _first_pixel, int _cable_shift_num, int _switch_shift_num)
 {
+  cable_bit_mask = numToMask(_cable_shift_num);
+  switch_bit_mask = numToMask(_switch_shift_num);
   first_pixel = _first_pixel;
   this->led_strip = _led_strip;
-  switch_bit_mask = _switch_bit_mask;
-  cable_bit_mask = _cable_bit_mask;
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
@@ -72,4 +72,14 @@ void Coal_Burner::updatePixels()
     else
       led_strip->setPixelColor(first_pixel + i, 0x0); // turn off pixel
   }
+}
+
+long Coal_Burner::numToMask(int num)
+{
+  long mask = 1;
+  for (int i = 0; i < num; i++)
+  {
+    mask = mask << 1;
+  }
+  return mask;
 }

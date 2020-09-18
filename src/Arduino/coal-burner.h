@@ -14,13 +14,14 @@ class Coal_Burner
 {
   // user-accessible "public" interface
 public:
-  Coal_Burner(Adafruit_NeoPixel *, int, long, long); //neopixel, first pixel, cable bit mask, switch bit mask
+  Coal_Burner(Adafruit_NeoPixel *, int, int, int); //neopixel, first pixel, cable bit shift num, switch bit shift num
   int getPowerProduced();
   void update(long);
 
   // library-accessible "private" interface
 private:
   void updatePixels();
+  long numToMask(int);
   Adafruit_NeoPixel *led_strip;
   long switch_bit_mask;
   long cable_bit_mask;

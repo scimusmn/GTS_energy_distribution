@@ -23,14 +23,14 @@ long baudrate = 115200;
 // Declare NeoPixel strip object for bar graphs:
 Adafruit_NeoPixel barGraphs(95, bar_graphs_Pin, NEO_GRB + NEO_KHZ800);
 
-Coal_Burner coalBurner1(&barGraphs, 0, 0x10, 0x100000); //neopixel, first pixel, cable bit mask, switch bit mask
-Coal_Burner coalBurner2(&barGraphs, 18, 0x20, 0x200000);
-Coal_Burner coalBurner3(&barGraphs, 37, 0x40, 0x400000);
-Coal_Burner coalBurner4(&barGraphs, 56, 0x80, 0x800000);
-Gas_Burner gasBurner1(&barGraphs, 27, 0x8, 0x400000, 0x800000);
-Renewable hydro1(&barGraphs, 46, 0x1000, A1, 0x000020); // provide an analog pin for hydro.
-Renewable solar1(&barGraphs, 65, 0x800, 0, 0x101000);   // 0 for the analog pin indicates it's wind or solar.
-Renewable wind1(&barGraphs, 84, 0x80000, 0, 0x070707);  // 0 for the analog pin indicates it's wind or solar.
+Coal_Burner coalBurner1(&barGraphs, 0, 4, 20); //neopixel, first pixel, cable bit mask, switch bit mask
+Coal_Burner coalBurner2(&barGraphs, 18, 5, 21);
+Coal_Burner coalBurner3(&barGraphs, 37, 6, 22);
+Coal_Burner coalBurner4(&barGraphs, 56, 7, 23);
+Gas_Burner gasBurner1(&barGraphs, 27, 3, 22, 23);   //using coal switches for momentary. TODO add happ
+Renewable hydro1(&barGraphs, 46, 12, A1, 0x000020); // provide an analog pin for hydro.
+Renewable solar1(&barGraphs, 65, 11, 0, 0x101000);  // 0 for the analog pin indicates it's wind or solar.
+Renewable wind1(&barGraphs, 84, 19, 0, 0x070707);   // 0 for the analog pin indicates it's wind or solar.
 
 long inputStates = 0; // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
 long prevInputStates = 2;
