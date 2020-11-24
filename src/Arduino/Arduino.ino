@@ -8,36 +8,30 @@
 //****************************************************************
 #include <Adafruit_NeoPixel.h>
 #include "source.h"
-// #include "arduino-base/Libraries/SerialController.hpp"
+#include "arduino-base/Libraries/SerialController.hpp"
 
-#define bar_graphs_Pin 6
-#define production_Pin 7
-#define demand_Pin 8
-#define cablesLatchPin 4
-#define cablesDataPin 3
-#define cablesClockPin 2
-#define hydroAnalogPin A1
+const int neopixel_pin = 6;
+const int shift_in_latch_pin = 4;
+const int shift_in_data_pin = 3;
+const int shift_in_clock_pin = 2;
+const int hydro_1_input_pin = A1;
 
-// SerialController serialController;
-// long baudrate = 115200;
+SerialController serialController;
+long baudrate = 115200;
 
 // Declare NeoPixel strip object for bar graphs:
-Adafruit_NeoPixel barGraphs(95, bar_graphs_Pin, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel ProductionGraph(70, production_Pin, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel DemandGraph(70, demand_Pin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels(95, neopixel_pin, NEO_GRB + NEO_KHZ800);
 
-Source Coal(&barGraphs, 0);
-Source Gas(&barGraphs, 18);
-Source Hydro(&barGraphs, 37);
-Source Solar(&barGraphs, 56);
-Source Wind(&barGraphs, 75);
+Source Coal(&pixels, 0);
+Source Gas(&pixels, 18);
+Source Hydro(&pixels, 37);
+Source Solar(&pixels, 56);
+Source Wind(&pixels, 75);
 
 long cableStates = 0; // GGGGCCCCHHSSSWWW   Gas Coal Hydro Solar Wind
 long prevCableStates = 2;
 int simulationMinutes = 0;
-int demand_mw = 0;
 int toggleStates[4] = {0, 0, 0, 0};
-int ledPins[4] = {11, 10, 12, 13};
 bool ledState[4];
 
 unsigned long currentMillis, prevSendMillis = 0;
@@ -45,28 +39,16 @@ unsigned long currentMillis, prevSendMillis = 0;
 void setup()
 {
   // Ensure Serial Port is open and ready to communicate
-  // serialController.setup(baudrate, &onParse);
-
-  Serial.begin(115200);
+  serialController.setup(baudrate, &onParse);
 
   //define pin modes
-  pinMode(cablesLatchPin, OUTPUT);
-  pinMode(cablesClockPin, OUTPUT);
-  pinMode(cablesDataPin, INPUT);
-  pinMode(hydroAnalogPin, INPUT);
-  for (int i = 0; i < 4; i++)
-  {
-    pinMode(ledPins[i], OUTPUT);
-  }
+  pinMode(shift_in_latch_pin, OUTPUT);
+  pinMode(shift_in_clock_pin, OUTPUT);
+  pinMode(shift_in_data_pin, INPUT);
+  pinMode(hydro_1_input_pin, INPUT);
 
-  barGraphs.begin();
-  DemandGraph.begin();
-  ProductionGraph.begin();
-  barGraphs.clear();
-  DemandGraph.clear();
-  ProductionGraph.clear();
-
-  Serial.println("Minutes, Coal, Gas, Hydro, Solar, Wind, Demand");
+  pixels.begin();
+  pixels.clear();
 }
 
 void loop()
@@ -78,107 +60,40 @@ void loop()
 
   if ((currentMillis - prevSendMillis) > 250)
   {
-
     updateHydro(); // read controls and update
-    int numToggles = 0;
-    for (int i = 0; i < 4; i++)
-    {
-      if ((toggleStates[i] > 0) && (toggleStates[i] < 24))
-      {
-        toggleStates[i]++;
-        ledState[i] = !ledState[i];
-        digitalWrite(ledPins[i], ledState[i]);
-      }
-      if (toggleStates[i] > 23)
-      {
-        numToggles++;
-        digitalWrite(ledPins[i], HIGH);
-        ledState[i] = 1;
-      }
-    }
-
-    // generates fake solar/wind data
-    int cosValue = (35 - 65 * cos((simulationMinutes / 60) / 3.8));
-    cosValue = constrain(cosValue, 0, 100);
-    Wind.setPercentageActive(cosValue);
-    Solar.setPercentageActive(cosValue);
-
-    // demand is just a sine wave
-    demand_mw = 700 - 250 * cos((simulationMinutes / 60) / 3.8);
-
-    Coal.setPercentageActive(numToggles * 25); // todo read switches!
-    Gas.setPercentageActive(100);              // todo read buttons
-
-    updateProductionGraph();
-    updateDemandGraph(demand_mw);
-
-    Serial.print(simulationMinutes);
-    Serial.print(", ");
-    Serial.print(Coal.getPowerProduced());
-    Serial.print(", ");
-    Serial.print(Gas.getPowerProduced());
-    Serial.print(", ");
-    Serial.print(Hydro.getPowerProduced());
-    Serial.print(", ");
-    Serial.print(Solar.getPowerProduced());
-    Serial.print(", ");
-    Serial.print(Wind.getPowerProduced());
-    Serial.print(", ");
-    Serial.println(demand_mw);
-
-    simulationMinutes = simulationMinutes + 15; // 15 minutes pass every 250 ms (1/4 second)
-    prevSendMillis = currentMillis;
   }
-}
 
-void updateProductionGraph()
-{
-  int powerProduced = Coal.getPowerProduced() + Gas.getPowerProduced() + Hydro.getPowerProduced() + Solar.getPowerProduced() + Wind.getPowerProduced();
-  powerProduced = map(powerProduced, 0, 1000, 0, 70);
-  ProductionGraph.clear();
-  for (int i = 0; i < powerProduced; i++)
-  {
-    ProductionGraph.setPixelColor(i, ProductionGraph.Color(0, 0, 20));
-  }
-  ProductionGraph.show();
-}
+  Coal.setPercentageActive(25); // todo read switches!
+  Gas.setPercentageActive(100); // todo read buttons
 
-void updateDemandGraph(int demand)
-{
-  int powerDemanded = map(demand, 0, 1000, 0, 70);
-  DemandGraph.clear();
-  for (int i = 0; i < powerDemanded; i++)
-  {
-    DemandGraph.setPixelColor(i, DemandGraph.Color(20, 0, 0));
-  }
-  DemandGraph.show();
+  prevSendMillis = currentMillis;
 }
 
 void updateCableStates()
 {
   //Pulse the latch pin:
   //set it to 1 to collect parallel data
-  digitalWrite(cablesLatchPin, 1);
+  digitalWrite(shift_in_latch_pin, 1);
   //set it to 1 to collect parallel data, wait
   delayMicroseconds(20);
   //set it to 0 to transmit data serially
-  digitalWrite(cablesLatchPin, 0);
+  digitalWrite(shift_in_latch_pin, 0);
 
   byte statesIn;
   //while the shift register is in serial mode
   //collect each shift register into a byte
   //the register attached to the chip comes in first
-  statesIn = shiftIn(cablesDataPin, cablesClockPin);
+  statesIn = shiftIn(shift_in_data_pin, shift_in_clock_pin);
   cableStates = statesIn;
-  statesIn = shiftIn(cablesDataPin, cablesClockPin);
+  statesIn = shiftIn(shift_in_data_pin, shift_in_clock_pin);
   cableStates = cableStates << 8;
   cableStates = cableStates | statesIn;
 
-  statesIn = shiftIn(cablesDataPin, cablesClockPin);
+  statesIn = shiftIn(shift_in_data_pin, shift_in_clock_pin);
   cableStates = cableStates << 8;
   cableStates = cableStates | statesIn;
 
-  statesIn = shiftIn(cablesDataPin, cablesClockPin);
+  statesIn = shiftIn(shift_in_data_pin, shift_in_clock_pin);
   cableStates = cableStates << 8;
   cableStates = cableStates | statesIn;
 
@@ -223,14 +138,14 @@ void updateCableStates()
           {
             toggleStates[n - 20] = 1;
             ledState[n - 20] = 1;
-            digitalWrite(ledPins[n - 20], HIGH);
+            // digitalWrite(ledPins[n - 20], HIGH);
           }
         }
         else
         {
-          toggleStates[n - 20] = 0;
-          ledState[n - 20] = 0;
-          digitalWrite(ledPins[n - 20], LOW);
+          // toggleStates[n - 20] = 0;
+          // ledState[n - 20] = 0;
+          // digitalWrite(ledPins[n - 20], LOW);
         }
       }
       mask = mask << 1;
@@ -279,7 +194,7 @@ byte shiftIn(int myDataPin, int myClockPin)
 void updateHydro()
 {
   int hydroValue;
-  hydroValue = analogRead(hydroAnalogPin);
+  hydroValue = analogRead(hydro_1_input_pin);
   // hydroValue = random(1023); //todo Remove once connected to Pot
   hydroValue = map(hydroValue, 35, 380, 0, 100);
   hydroValue = constrain(hydroValue, 0, 100);
@@ -287,17 +202,21 @@ void updateHydro()
 }
 
 // this function will run when serialController reads new data  TODO reconfig for Stele serial
-// void onParse(char* message, char* value) {
-//   if (strcmp(message, "led") == 0) {
-//     // Turn-on led
-//   }
-//   else if (strcmp(message, "wake-arduino") == 0 && strcmp(value, "1") == 0) {
-//     // you must respond to this message, or else
-//     // stele will believe it has lost connection to the arduino
-//     serialController.sendMessage("arduino-ready", "1");
-//   }
-//   else {
-//     // helpfully alert us if we've sent something wrong :)
-//     serialController.sendMessage("unknown-command", "1");
-//   }
-// }
+void onParse(char *message, char *value)
+{
+  if (strcmp(message, "led") == 0)
+  {
+    // Turn-on led
+  }
+  else if (strcmp(message, "wake-arduino") == 0 && strcmp(value, "1") == 0)
+  {
+    // you must respond to this message, or else
+    // stele will believe it has lost connection to the arduino
+    serialController.sendMessage("arduino-ready", "1");
+  }
+  else
+  {
+    // helpfully alert us if we've sent something wrong :)
+    serialController.sendMessage("unknown-command", "1");
+  }
+}
