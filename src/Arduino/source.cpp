@@ -5,52 +5,24 @@
 
 #include "Arduino.h"
 #include "source.h"
-#include "Adafruit_NeoPixel.h"
 
-Source::Source(Adafruit_NeoPixel *_led_strip, int _first_pixel)
+Source::Source(SerialController *_serial, char _name[7], int _pin)
 {
-  first_pixel = _first_pixel;
-  this->led_strip = _led_strip;
-  powerOutput = 0;
-  maxCapacity = 0;
+  pin = _pin;
+  pinMode(pin, INPUT);
+  this->serialCont = _serial;
+  name = _name;
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
-void Source::setNumCables(int numCables)
+void Source::sendIfNew()
 {
-  maxCapacity = numCables * 100;
-  lightGraph();
-}
-
-void Source::setPercentageActive(int percent)
-{
-  powerOutput = (maxCapacity / 100) * percent;
-  lightGraph();
-}
-
-void Source::lightGraph()
-{
-  int C = map(maxCapacity, 0, 400, 0, 18);
-  int P = map(powerOutput, 0, 400, 0, 18);
-  for (int i = 0; i < 18; i++)
+  percent = analogRead(pin);
+  percent = map(percent, 40, 350, 0, 100);
+  percent = constrain(percent, 0, 100);
+  if (percent != prevPercent)
   {
-    if (i < P)
-    {
-      led_strip->setPixelColor(first_pixel + i, led_strip->Color(0, 0, 40));
-    }
-    else if (i < C)
-    {
-      led_strip->setPixelColor(first_pixel + i, led_strip->Color(0, 5, 0));
-    }
-    else
-    {
-      led_strip->setPixelColor(first_pixel + i, led_strip->Color(0, 0, 0));
-    }
+    prevPercent = percent;
+    serialCont->sendMessage(name, percent);
   }
-  led_strip->show();
-}
-
-int Source::getPowerProduced()
-{
-  return powerOutput;
 }

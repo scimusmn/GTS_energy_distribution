@@ -3,7 +3,7 @@
   Joe Meyer created 10/17/2019 at the science museum of mn
 */
 #include "Arduino.h"
-#include "Adafruit_NeoPixel.h"
+#include "arduino-base/Libraries/SerialController.hpp"
 
 // ensure this library description is only included once
 #ifndef Source_h
@@ -14,18 +14,16 @@ class Source
 {
   // user-accessible "public" interface
 public:
-  Source(Adafruit_NeoPixel *, int); //neopixel, first pixel
-  int getPowerProduced();
-  void setPercentageActive(int);
-  void setNumCables(int);
+  Source(SerialController *, char[7], int); //neopixel, first pixel
+  void sendIfNew();
+  int prevPercent;
 
   // library-accessible "private" interface
 private:
-  void lightGraph();
-  Adafruit_NeoPixel *led_strip;
-  int first_pixel;
-  int powerOutput;
-  int maxCapacity;
+  int percent;
+  char *name;
+  int pin;
+  SerialController *serialCont;
 };
 
 #endif
