@@ -68,6 +68,7 @@ void setup()
 
     pixels.begin();
     pixels.clear();
+    pixels.show();
 }
 
 void loop()
@@ -181,12 +182,16 @@ void onParse(char *message, char *value)
     }
     else if (strcmp(message, "coal-1-light") == 0) //TODO
     {
-        if (strcmp(value, "on"))
-            lightPixel(5, 1);
-        else if (strcmp(value, "warming"))
-            lightPixel(5, 2);
-        else if (strcmp(value, "off"))
-            lightPixel(5, 0);
+        lightPixel(0, value);
+    }
+
+    else if (strcmp(message, "coal-2-light") == 0) //TODO
+    {
+        lightPixel(1, value);
+    }
+    else if (strcmp(message, "coal-3-light") == 0) //TODO
+    {
+        lightPixel(2, value);
     }
 
     else if (strcmp(message, "get-all-states") == 0) //TODO
@@ -208,8 +213,17 @@ void onParse(char *message, char *value)
     }
 }
 
-void lightPixel(int pixel_index, int color)
+void lightPixel(int pixel_index, char *status)
 {
+    if (strcmp(status, "on") == 0)
+        pixels.setPixelColor(pixel_index, pixels.Color(0, 75, 0));
+    else if (strcmp(status, "warming") == 0)
+        pixels.setPixelColor(pixel_index, pixels.Color(40, 10, 0));
+    else if (strcmp(status, "off") == 0)
+        pixels.setPixelColor(pixel_index, pixels.Color(0, 0, 0));
+
+    pixels.show();
+
     //TODO
 }
 
