@@ -9,9 +9,11 @@
 #include <Adafruit_NeoPixel.h>
 #include "source.h"
 #include "arduino-base/Libraries/SerialController.hpp"
+#include "arduino-base/Libraries/Button.h"
 
 //Pin assignments
 const int neopixel_pin = 6;
+const int start_btn_pin = 5;
 const int shift_in_latch_pin = 4;
 const int shift_in_data_pin = 3;
 const int shift_in_clock_pin = 2;
@@ -53,7 +55,7 @@ unsigned long currentMillis, prevSendMillis = 0;
 
 // Declare NeoPixel strip object for bar graphs:
 Adafruit_NeoPixel pixels(95, neopixel_pin, NEO_GRB + NEO_KHZ800);
-
+Button startButton;
 Source hydro1(&serialController, "hydro-1-lever", hydro_1_input_pin);
 
 void setup()
@@ -65,6 +67,13 @@ void setup()
     pinMode(shift_in_latch_pin, OUTPUT);
     pinMode(shift_in_clock_pin, OUTPUT);
     pinMode(shift_in_data_pin, INPUT);
+
+    startButton.setup(start_btn_pin, [](int state) {
+        if (state == 1)
+        {
+            serialController.sendMessage("start-button", "1");
+        }
+    });
 
     pixels.begin();
     pixels.clear();
@@ -80,7 +89,7 @@ void loop()
         updateJacksSwitches();
         hydro1.sendIfNew();
     }
-
+    startButton.update();
     serialController.update();
 }
 
