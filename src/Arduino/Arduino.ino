@@ -14,6 +14,7 @@
 //Pin assignments
 const int neopixel_pin = 6;
 const int start_btn_pin = 5;
+const int start_btn_LED_pin = 7;
 const int shift_in_latch_pin = 4;
 const int shift_in_data_pin = 3;
 const int shift_in_clock_pin = 2;
@@ -64,6 +65,7 @@ void setup()
     serialController.setup(baudrate, &onParse);
 
     //define pin modes
+    pinMode(start_btn_LED_pin, OUTPUT);
     pinMode(shift_in_latch_pin, OUTPUT);
     pinMode(shift_in_clock_pin, OUTPUT);
     pinMode(shift_in_data_pin, INPUT);
@@ -84,10 +86,11 @@ void loop()
 {
     currentMillis = millis();
 
-    if ((currentMillis - prevSendMillis) > 50)
+    if ((currentMillis - prevSendMillis) > 200)
     {
         updateJacksSwitches();
         hydro1.sendIfNew();
+        // lightBarGraph(10, hydro1.prevPercent);
     }
     startButton.update();
     serialController.update();
@@ -173,21 +176,26 @@ byte shiftIn(int myDataPin, int myClockPin)
 // this function will run when serialController reads new data
 void onParse(char *message, char *value)
 {
-    if (strcmp(message, "solar-1-light-bar") == 0)
+    if (strcmp(message, "start-button-light") == 0)
     {
-        lightBarGraph(50, atoi(value)); // value of first pixel to be lit.
+        digitalWrite(start_btn_LED_pin, atoi(value));
+    }
+
+    else if (strcmp(message, "solar-1-light-bar") == 0)
+    {
+        lightBarGraph(80, atoi(value)); // value of first pixel to be lit.
     }
     else if (strcmp(message, "solar-2-light-bar") == 0)
     {
-        lightBarGraph(60, atoi(value)); // value of first pixel to be lit.
+        lightBarGraph(20, atoi(value)); // value of first pixel to be lit.
     }
     else if (strcmp(message, "wind-1-light-bar") == 0)
     {
-        lightBarGraph(30, atoi(value)); // value of first pixel to be lit.
+        lightBarGraph(40, atoi(value)); // value of first pixel to be lit.
     }
     else if (strcmp(message, "wind-2-light-bar") == 0)
     {
-        lightBarGraph(40, atoi(value)); // value of first pixel to be lit.
+        lightBarGraph(60, atoi(value)); // value of first pixel to be lit.
     }
     else if (strcmp(message, "coal-1-light") == 0) //TODO
     {
